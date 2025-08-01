@@ -18,9 +18,6 @@ namespace GorillaTimeChanger
         private bool wasRightPrimaryPressed;
         private bool wasLeftPrimaryPressed;
 
-        private Texture2D dayTexture, eveningTexture, nightTexture, morningTexture;
-        private Texture2D rainTexture, clearTexture;
-
         private GameObject dayObj, eveningObj, nightObj, morningObj;
         private GameObject rainObj, clearObj;
         private GameObject canvasObj;
@@ -29,7 +26,7 @@ namespace GorillaTimeChanger
 
         private bool isRaining
         {
-            get { return _isRaining; }
+            get => _isRaining;
             set
             {
                 if (_isRaining != value)
@@ -52,7 +49,7 @@ namespace GorillaTimeChanger
 
         private bool isOpen
         {
-            get { return _isOpen; }
+            get => _isOpen;
             set
             {
                 if (_isOpen != value)
@@ -79,54 +76,18 @@ namespace GorillaTimeChanger
 
         private void OnGameInitialized()
         {
-            NetworkSystem.Instance.OnJoinedRoomEvent += OnRoomJoin;
-            NetworkSystem.Instance.OnReturnedToSinglePlayer += OnRoomLeave;
-
-            dayTexture = LoadEmbeddedTexture2D("GorillaTimeChanger.Resources.Day.png");
-            eveningTexture = LoadEmbeddedTexture2D("GorillaTimeChanger.Resources.Evening.png");
-            nightTexture = LoadEmbeddedTexture2D("GorillaTimeChanger.Resources.Night.png");
-            morningTexture = LoadEmbeddedTexture2D("GorillaTimeChanger.Resources.Morning.png");
-            rainTexture = LoadEmbeddedTexture2D("GorillaTimeChanger.Resources.Rain.png");
-            clearTexture = LoadEmbeddedTexture2D("GorillaTimeChanger.Resources.Clear.png");
-
-            dayObj = LoadTexture2DIntoWorldSpace(dayTexture, "Day");
-            eveningObj = LoadTexture2DIntoWorldSpace(eveningTexture, "Evening");
-            nightObj = LoadTexture2DIntoWorldSpace(nightTexture, "Night");
-            morningObj = LoadTexture2DIntoWorldSpace(morningTexture, "Morning");
-            rainObj = LoadTexture2DIntoWorldSpace(rainTexture, "Rain");
-            clearObj = LoadTexture2DIntoWorldSpace(clearTexture, "Clear");
+            NetworkSystem.Instance.OnJoinedRoomEvent += (Action) OnRoomJoin;
+            NetworkSystem.Instance.OnReturnedToSinglePlayer += (Action) OnRoomLeave;
 
             canvasObj = new GameObject("GorillaTimeChangerCanvas");
             canvasObj.transform.localScale = Vector3.zero;
 
-            dayObj.transform.SetParent(canvasObj.transform);
-            eveningObj.transform.SetParent(canvasObj.transform);
-            nightObj.transform.SetParent(canvasObj.transform);
-            morningObj.transform.SetParent(canvasObj.transform);
-            rainObj.transform.SetParent(canvasObj.transform);
-            clearObj.transform.SetParent(canvasObj.transform);
-
-            dayObj.transform.localScale = Vector3.one * 0.1f;
-            eveningObj.transform.localScale = Vector3.one * 0.1f;
-            nightObj.transform.localScale = Vector3.one * 0.1f;
-            morningObj.transform.localScale = Vector3.one * 0.1f;
-            rainObj.transform.localScale = Vector3.one * 0.1f;
-            clearObj.transform.localScale = Vector3.one * 0.1f;
-
-            dayObj.transform.localPosition = new Vector3(0f, -0.1f, 0f);
-            eveningObj.transform.localPosition = new Vector3(0.1f, 0f, 0f);
-            nightObj.transform.localPosition = new Vector3(0f, 0.1f, 0f);
-            morningObj.transform.localPosition = new Vector3(-0.1f, 0f, 0f);
-            rainObj.transform.localPosition = new Vector3(0f, -0.25f, 0f);
-            clearObj.transform.localPosition = new Vector3(0f, -0.25f, 0f);
-
-            dayObj.AddComponent<PressableButton>().OnPress = () => BetterDayNightManager.instance.SetTimeOfDay(DayTime);
-            eveningObj.AddComponent<PressableButton>().OnPress =
-                () => BetterDayNightManager.instance.SetTimeOfDay(EveningTime);
-            nightObj.AddComponent<PressableButton>().OnPress =
-                () => BetterDayNightManager.instance.SetTimeOfDay(NightTime);
-            morningObj.AddComponent<PressableButton>().OnPress =
-                () => BetterDayNightManager.instance.SetTimeOfDay(MorningTime);
+            dayObj = LoadButton(LoadEmbeddedTexture2D("GorillaTimeChanger.Resources.Day.png"), "Day", new Vector3(0f, -0.1f, 0f), true, () => BetterDayNightManager.instance.SetTimeOfDay(DayTime));
+            eveningObj = LoadButton(LoadEmbeddedTexture2D("GorillaTimeChanger.Resources.Evening.png"), "Evening", new Vector3(0.1f, 0f, 0f), true, () => BetterDayNightManager.instance.SetTimeOfDay(EveningTime));
+            nightObj = LoadButton(LoadEmbeddedTexture2D("GorillaTimeChanger.Resources.Night.png"), "Night", new Vector3(0f, 0.1f, 0f), true, () => BetterDayNightManager.instance.SetTimeOfDay(NightTime));
+            morningObj = LoadButton(LoadEmbeddedTexture2D("GorillaTimeChanger.Resources.Morning.png"), "Morning", new Vector3(-0.1f, 0f, 0f), true, () => BetterDayNightManager.instance.SetTimeOfDay(MorningTime));
+            rainObj = LoadButton(LoadEmbeddedTexture2D("GorillaTimeChanger.Resources.Rain.png"), "Rain", new Vector3(0f, -0.25f, 0f), false);
+            clearObj = LoadButton(LoadEmbeddedTexture2D("GorillaTimeChanger.Resources.Clear.png"), "Clear", new Vector3(0f, -0.25f, 0f), false);
             
             GameObject rainButton = new GameObject("RainButton");
             rainButton.transform.SetParent(canvasObj.transform);
@@ -153,7 +114,7 @@ namespace GorillaTimeChanger
             }
         }
 
-        private GameObject LoadTexture2DIntoWorldSpace(Texture2D texture, string name)
+        private GameObject LoadButton(Texture2D texture, string name, Vector3 position, bool shouldButton, Action OnPress = null)
         {
             GameObject obj = GameObject.CreatePrimitive(PrimitiveType.Quad);
             Destroy(obj.GetComponent<Collider>());
@@ -161,13 +122,21 @@ namespace GorillaTimeChanger
 
             obj.GetComponent<Renderer>().material = new Material(Shader.Find("UI/Default"));
             obj.GetComponent<Renderer>().material.mainTexture = texture;
+            
+            obj.transform.SetParent(canvasObj.transform);
+            obj.transform.localScale = Vector3.one * 0.1f;
+            obj.transform.localPosition = position;
+            
+            if (shouldButton)
+                obj.AddComponent<PressableButton>().OnPress = OnPress;
 
             return obj;
         }
 
         private void Update()
         {
-            if (!inModdedRoom) return;
+            if (!inModdedRoom)
+                return;
 
             if (ControllerInputPoller.instance.leftControllerPrimaryButton &&
                 ControllerInputPoller.instance.rightControllerPrimaryButton && !wasLeftPrimaryPressed &&
